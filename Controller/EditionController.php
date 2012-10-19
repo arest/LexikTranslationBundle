@@ -178,6 +178,11 @@ class EditionController extends Controller
      */
     protected function getManagedLocales()
     {
-        return $this->container->getParameter('lexik_translation.managed_locales');
+        $reps = $this->container->getParameter('lexik_translation.managed_locales');
+        $locales = array();
+        foreach ($reps as $rep) {
+            $locales = array_merge( $locales, $this->container->get('lexik_translation.storage_manager')->getRepository($rep)->getOptions() );
+        }
+        return $locales;
     }
 }

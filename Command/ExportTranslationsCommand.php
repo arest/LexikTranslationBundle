@@ -9,6 +9,10 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Application;
+use Symfony\Bundle\FrameworkBundle\Command\CacheClearCommand;
+use Symfony\Component\Console\Input\ArgvInput;
+use Symfony\Component\Console\Output\ConsoleOutput;
 
 /**
  * Export translations from the database in to files.
@@ -45,7 +49,7 @@ class ExportTranslationsCommand extends ContainerAwareCommand
      * (non-PHPdoc)
      * @see Symfony\Component\Console\Command.Command::execute()
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    public function execute(InputInterface $input, OutputInterface $output)
     {
         $this->input = $input;
         $this->output = $output;
@@ -56,9 +60,24 @@ class ExportTranslationsCommand extends ContainerAwareCommand
             foreach ($filesToExport as $file) {
                 $this->exportFile($file);
             }
+            
+            $rootDir = $this->getContainer()->getParameter('kernel.root_dir');
+            $dirPath = $rootDir.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'web'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'new_translations';
+            file_put_contents( $dirPath, '' );
+            // $rootDir = $this->getContainer()->getParameter('kernel.root_dir');
+            // $dirPath = $rootDir.DIRECTORY_SEPARATOR.'cache';
+            // $this->deleteCache($dirPath);
+            // $application = new Application();
+            // $application->add(new CacheClearCommand());
+            // $command = $application->find('cache:clear');
+            // $input = new ArgvInput(array('app/console'));
+            // $returnCode = $command->run($input, $output);
+                
         } else {
             $this->output->writeln('<comment>No translation\'s files in the database.</comment>');
         }
+        
+        
     }
 
     /**
@@ -68,8 +87,8 @@ class ExportTranslationsCommand extends ContainerAwareCommand
      */
     protected function getFilesToExport()
     {
-        $locales = $this->input->getOption('locales') ? explode(',', $this->input->getOption('locales')) : array();
-        $domains = $this->input->getOption('domains') ? explode(',', $this->input->getOption('domains')) : array();
+        $locales = array();
+        $domains = array();
 
         $repository = $this->getContainer()
             ->get('lexik_translation.file.manager')
@@ -98,7 +117,7 @@ class ExportTranslationsCommand extends ContainerAwareCommand
             ->getTranslationsForFile($file, $onlyUpdated);
 
         if (count($translations) > 0) {
-            $format = $this->input->getOption('format') ? $this->input->getOption('format') : $file->getExtention();
+            $format = $file->getExtention();
 
             // we don't write vendors file, translations will be exported in app/Resources/translations
             $outputPath = (substr($file->getPath(), 0, 6) == 'vendor') ? sprintf('%s/Resources/translations', $rootDir) : sprintf('%s/../%s', $rootDir, $file->getPath());
@@ -151,5 +170,25 @@ class ExportTranslationsCommand extends ContainerAwareCommand
         } catch (\Exception $e) {
             $this->output->writeln(sprintf('<error>"%s"</error>', $e->getMessage()));
         }
+    }
+    
+    
+    protected static function deleteCache($dirPath) {
+
+        if (! is_dir($dirPath)) {
+            throw new InvalidArgumentException('$dirPath must be a directory');
+        }
+        if (substr($dirPath, strlen($dirPath) - 1, 1) != '/') {
+            $dirPath .= '/';
+        }
+        $files = glob($dirPath . '*', GLOB_MARK);
+        foreach ($files as $file) {
+            if (is_dir($file)) {
+                self::deleteCache($file);
+            } else {
+                unlink($file);
+            }
+        }
+        rmdir($dirPath);
     }
 }
