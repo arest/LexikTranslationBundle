@@ -60,18 +60,6 @@ class ExportTranslationsCommand extends ContainerAwareCommand
             foreach ($filesToExport as $file) {
                 $this->exportFile($file);
             }
-            
-            $rootDir = $this->getContainer()->getParameter('kernel.root_dir');
-            $dirPath = $rootDir.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'web'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'new_translations';
-            file_put_contents( $dirPath, '' );
-            // $rootDir = $this->getContainer()->getParameter('kernel.root_dir');
-            // $dirPath = $rootDir.DIRECTORY_SEPARATOR.'cache';
-            // $this->deleteCache($dirPath);
-            // $application = new Application();
-            // $application->add(new CacheClearCommand());
-            // $command = $application->find('cache:clear');
-            // $input = new ArgvInput(array('app/console'));
-            // $returnCode = $command->run($input, $output);
                 
         } else {
             $this->output->writeln('<comment>No translation\'s files in the database.</comment>');
